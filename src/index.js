@@ -7,9 +7,13 @@ const { createTables } = require("./database/database.js")
 
 const runScraper = async () => {
 
-  for (let i = 0; i < config.urls.length; i++) {
+  var urls = await config.GetUrls();
+
+console.log(`config.urls.length ==== ${urls.length}`);
+
+  for (let i = 0; i < urls.length; i++) {
     try {
-      scraper(config.urls[i])
+      scraper(urls[i])
     } catch (error) {
       $logger.error(error)
     }
@@ -26,5 +30,6 @@ const main = async () => {
 main()
 
 cron.schedule(config.interval, () => {
+  console.log('awaiting time to start again');
   runScraper()
 })

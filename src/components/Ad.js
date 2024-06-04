@@ -3,7 +3,8 @@
 const notifier = require('./Notifier')
 const $logger = require('./Logger')
 
-const adRepository = require('../repositories/adRepository.js')
+const adRepository = require('../repositories/adRepository.js');
+const { all } = require('axios');
 
 class Ad {
 
@@ -15,7 +16,8 @@ class Ad {
         this.price      = ad.price
         this.valid      = false
         this.saved      = null,
-        this.notify     = ad.notify
+        this.notify     = ad.notify,
+        this.location   = ad.location
     }
 
     process = async () => {
@@ -26,14 +28,15 @@ class Ad {
         }
 
         try {
-
             // check if this entry was already added to DB
             if (await this.alreadySaved()) {
+                $logger.info(this.title + ' - Already saved')
                 return this.checkPriceChange()
             }
 
             else {
                 // create a new entry in the database
+                $logger.info(this.title + ' - SHOULD CREATE IN DATABASE')
                 return this.addToDataBase()
             }
 
@@ -62,14 +65,37 @@ class Ad {
             $logger.error(error)
         }
 
-        if (this.notify) {
-            try {
-                const msg = 'New ad found!\n' + this.title + ' - R$' + this.price + '\n\n' + this.url
-                notifier.sendNotification(msg, this.id)
-            } catch (error) {
-                $logger.error('Could not send a notification')
-            }
+        // check if title contains search query
+        this.searchTerm = this.searchTerm.replace('  ', ' ');
+        this.title = this.title.replace('  ', ' ');
+
+        const searchTerms = this.searchTerm.toLowerCase().split(' ');
+        const titleLowerCase = this.title.toLowerCase();
+        const allTermsPresent = searchTerms.every(term => titleLowerCase.includes(term.toLowerCase()));
+        
+        if(allTermsPresent){
+            console.log('CAN NOTIFY, ALL TERMS PRESENT. TITLE: ' + this.title);
+
+            // if (this.notify) {
+                try {
+                    const adTitle = this.title;
+                    const adPrice = 'R$' + this.price;
+                    const adUrl = this.url;
+
+                    const msg = `New ad found!\n${adTitle} - ${adPrice}\n\n ${this.location} \n\n${adUrl}`;
+
+                    notifier.sendNotification(msg, this.id)
+                } catch (error) {
+                    $logger.error('Could not send a notification')
+                }
+            // }
         }
+        else{
+            $logger.info('******** TERMS: ' + searchTerms); 
+            $logger.info('CANT NOTIFY, ANY TERMS IS NOT PRESENT. TITLE: ' + this.title);
+        }
+
+        
     }
 
     updatePrice = async () => {

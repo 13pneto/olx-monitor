@@ -91,6 +91,7 @@ const scrapePage = async ($, searchTerm, notify) => {
             const id = advert.listId
             const url = advert.url
             const price = parseInt(advert.price?.replace('R$ ', '')?.replace('.', '') || '0')
+            const location = advert.location
 
             const result = {
                 id,
@@ -98,7 +99,8 @@ const scrapePage = async ($, searchTerm, notify) => {
                 title,
                 searchTerm,
                 price,
-                notify
+                notify,
+                location
             }
 
             const ad = new Ad(result)
@@ -112,7 +114,7 @@ const scrapePage = async ($, searchTerm, notify) => {
             }
         }
 
-        return true
+        return false;
     } catch (error) {
         $logger.error(error);
         throw new Error('Scraping failed');
